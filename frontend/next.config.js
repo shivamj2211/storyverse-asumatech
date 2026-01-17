@@ -2,15 +2,29 @@ const withPWA = require("next-pwa")({
   dest: "public",
   register: true,
   skipWaiting: true,
+
+  // ✅ production me PWA ON, dev me OFF
   disable: process.env.NODE_ENV !== "production",
 
-  // ✅ stop precaching files that can be missing in app router
+  // ✅ App Router me kabhi kabhi ye files 404 hoti hain
   buildExcludes: [
     /app-build-manifest\.json$/,
     /build-manifest\.json$/,
   ],
-});
 
+  // ✅ Offline install criteria ke liye fallback must
+  runtimeCaching: [
+    {
+      urlPattern: ({ request }) => request.mode === "navigate",
+      handler: "NetworkFirst",
+      options: {
+        cacheName: "pages",
+        networkTimeoutSeconds: 5,
+        fallbackURL: "/offline.html",
+      },
+    },
+  ],
+});
 
 /** @type {import('next').NextConfig} */
 const nextConfig = {
