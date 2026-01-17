@@ -8,7 +8,6 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 function isIOS() {
-  // iPhone/iPad/iPod + iPadOS desktop mode
   return (
     /iphone|ipad|ipod/i.test(navigator.userAgent) ||
     (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
@@ -16,44 +15,28 @@ function isIOS() {
 }
 
 function isStandalone() {
-  // iOS Safari
   // @ts-ignore
   if (navigator.standalone) return true;
-  // other browsers
   return window.matchMedia("(display-mode: standalone)").matches;
 }
 
 export default function InstallPWAButton() {
   const [mounted, setMounted] = useState(false);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
-
-  // show button only when it makes sense
-  const [show, setShow] = useState(false);
   const [showIOSHelp, setShowIOSHelp] = useState(false);
 
   useEffect(() => {
     setMounted(true);
 
-    // hide if already installed
-    if (isStandalone()) {
-      setShow(false);
-      return;
-    }
-
-    // If iOS -> we can show button (it will show help)
-    if (isIOS()) setShow(true);
-
     const onBIP = (e: Event) => {
       e.preventDefault();
-      console.log("🔥 beforeinstallprompt fired (install is available)");
+      console.log("🔥 beforeinstallprompt fired");
       setDeferred(e as BeforeInstallPromptEvent);
-      setShow(true);
     };
 
     const onInstalled = () => {
-      console.log("🎉 appinstalled event fired (install completed)");
+      console.log("🎉 appinstalled fired");
       setDeferred(null);
-      setShow(false);
     };
 
     window.addEventListener("beforeinstallprompt", onBIP);
@@ -65,46 +48,41 @@ export default function InstallPWAButton() {
     };
   }, []);
 
+  // SSR safe
   if (!mounted) return null;
-  if (!show) return null;
+
+  // If already installed, hide button
+  if (isStandalone()) return null;
 
   const onClick = async () => {
-    console.log("👉 Install button clicked");
-    console.log("standalone?", isStandalone());
-    console.log("isIOS?", isIOS());
-    console.log("hasDeferred?", !!deferred);
+    console.log("👉 Install clicked. deferred?", !!deferred, "isIOS?", isIOS());
 
-    // iOS Safari: no native prompt
+    // iOS: no native prompt
     if (isIOS() && !deferred) {
-      console.warn("ℹ️ iOS detected: no native install prompt, showing help modal");
       setShowIOSHelp(true);
       return;
     }
 
     if (!deferred) {
       console.warn(
-        "❌ No deferred prompt available. Reason: Chrome hasn't fired beforeinstallprompt yet OR user dismissed earlier OR not installable yet."
+        "❌ Install prompt not available yet. (beforeinstallprompt not fired)\n" +
+          "Common reasons: previously dismissed, browser rules/engagement, or not installable."
+      );
+      // fallback: show Chrome menu instruction
+      alert(
+        "Install option abhi browser prompt nahi de raha.\n\nTry:\n1) Chrome menu (⋮) → Install app / Add to Home screen\n2) Incognito me test\n3) Clear site data + reload"
       );
       return;
     }
 
     try {
-      console.log("🚀 Calling deferred.prompt()");
       await deferred.prompt();
-
       const choice = await deferred.userChoice;
       console.log("📦 userChoice:", choice);
-
-      if (choice.outcome === "accepted") {
-        console.log("✅ User ACCEPTED install");
-      } else {
-        console.log("❌ User DISMISSED install");
-      }
-    } catch (err) {
-      console.error("❌ prompt() failed:", err);
+    } catch (e) {
+      console.error("❌ prompt failed:", e);
     } finally {
       setDeferred(null);
-      setShow(false);
     }
   };
 
@@ -126,10 +104,8 @@ export default function InstallPWAButton() {
             </div>
             <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
               iPhone/iPad me install karne ke liye:
-              <br />
-              1) Safari me <b>Share</b> button dabao
-              <br />
-              2) <b>Add to Home Screen</b> select karo
+              <br />1) Safari me <b>Share</b> button dabao
+              <br />2) <b>Add to Home Screen</b> select karo
             </div>
 
             <div className="mt-4 flex gap-2 justify-end">
