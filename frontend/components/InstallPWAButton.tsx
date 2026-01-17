@@ -8,7 +8,11 @@ type BeforeInstallPromptEvent = Event & {
 };
 
 function isIOS() {
-  return /iphone|ipad|ipod/i.test(navigator.userAgent);
+  // iPhone/iPad/iPod + iPadOS desktop mode
+  return (
+    /iphone|ipad|ipod/i.test(navigator.userAgent) ||
+    (navigator.platform === "MacIntel" && navigator.maxTouchPoints > 1)
+  );
 }
 
 function isStandalone() {
@@ -22,40 +26,86 @@ function isStandalone() {
 export default function InstallPWAButton() {
   const [mounted, setMounted] = useState(false);
   const [deferred, setDeferred] = useState<BeforeInstallPromptEvent | null>(null);
+
+  // show button only when it makes sense
   const [show, setShow] = useState(false);
   const [showIOSHelp, setShowIOSHelp] = useState(false);
 
-  // ✅ ensure client-only rendering decision
   useEffect(() => {
     setMounted(true);
-    setShow(!isStandalone());
 
-    const handler = (e: Event) => {
+    // hide if already installed
+    if (isStandalone()) {
+      setShow(false);
+      return;
+    }
+
+    // If iOS -> we can show button (it will show help)
+    if (isIOS()) setShow(true);
+
+    const onBIP = (e: Event) => {
       e.preventDefault();
+      console.log("🔥 beforeinstallprompt fired (install is available)");
       setDeferred(e as BeforeInstallPromptEvent);
       setShow(true);
     };
 
-    window.addEventListener("beforeinstallprompt", handler);
-    return () => window.removeEventListener("beforeinstallprompt", handler);
+    const onInstalled = () => {
+      console.log("🎉 appinstalled event fired (install completed)");
+      setDeferred(null);
+      setShow(false);
+    };
+
+    window.addEventListener("beforeinstallprompt", onBIP);
+    window.addEventListener("appinstalled", onInstalled);
+
+    return () => {
+      window.removeEventListener("beforeinstallprompt", onBIP);
+      window.removeEventListener("appinstalled", onInstalled);
+    };
   }, []);
 
-  // ✅ prevent hydration mismatch
   if (!mounted) return null;
   if (!show) return null;
 
   const onClick = async () => {
+    console.log("👉 Install button clicked");
+    console.log("standalone?", isStandalone());
+    console.log("isIOS?", isIOS());
+    console.log("hasDeferred?", !!deferred);
+
     // iOS Safari: no native prompt
     if (isIOS() && !deferred) {
+      console.warn("ℹ️ iOS detected: no native install prompt, showing help modal");
       setShowIOSHelp(true);
       return;
     }
 
-    if (!deferred) return;
-    await deferred.prompt();
-    await deferred.userChoice;
-    setDeferred(null);
-    setShow(false);
+    if (!deferred) {
+      console.warn(
+        "❌ No deferred prompt available. Reason: Chrome hasn't fired beforeinstallprompt yet OR user dismissed earlier OR not installable yet."
+      );
+      return;
+    }
+
+    try {
+      console.log("🚀 Calling deferred.prompt()");
+      await deferred.prompt();
+
+      const choice = await deferred.userChoice;
+      console.log("📦 userChoice:", choice);
+
+      if (choice.outcome === "accepted") {
+        console.log("✅ User ACCEPTED install");
+      } else {
+        console.log("❌ User DISMISSED install");
+      }
+    } catch (err) {
+      console.error("❌ prompt() failed:", err);
+    } finally {
+      setDeferred(null);
+      setShow(false);
+    }
   };
 
   return (
@@ -76,8 +126,10 @@ export default function InstallPWAButton() {
             </div>
             <div className="mt-2 text-sm text-zinc-600 dark:text-zinc-300 leading-relaxed">
               iPhone/iPad me install karne ke liye:
-              <br />1) Safari me <b>Share</b> button dabao
-              <br />2) <b>Add to Home Screen</b> select karo
+              <br />
+              1) Safari me <b>Share</b> button dabao
+              <br />
+              2) <b>Add to Home Screen</b> select karo
             </div>
 
             <div className="mt-4 flex gap-2 justify-end">
