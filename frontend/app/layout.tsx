@@ -9,6 +9,7 @@ import ThemeProvider from "../components/ThemeProvider";
 import ScrollToTopOnRouteChange from "../components/ScrollToTopOnRouteChange";
 import CookieConsent from "../components/CookieConsent";
 import type { Metadata, Viewport } from "next";
+import PWARegister from "../components/PWARegister"; 
 const inter = Inter({ subsets: ["latin"] });
 
 export const metadata: Metadata = {
@@ -43,6 +44,7 @@ export default function RootLayout({ children }: { children: React.ReactNode }) 
       <body className={`bg-white text-black dark:bg-black dark:text-white ${inter.className}`}>
         {/* 🌗 Theme provider must wrap everything */}
         <ThemeProvider>
+           <PWARegister />
           <AlertProvider>
             <ScrollToTopOnRouteChange />
             <NavBar />
