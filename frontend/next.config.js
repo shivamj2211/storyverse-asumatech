@@ -7,12 +7,18 @@ const withPWA = require("next-pwa")({
   disable: process.env.NODE_ENV !== "production",
 
   // ✅ App Router me kabhi kabhi ye files 404 hoti hain
-  buildExcludes: [
-    /app-build-manifest\.json$/,
-    /build-manifest\.json$/,
+  buildExcludes: [/app-build-manifest\.json$/, /build-manifest\.json$/],
+
+  // ✅ OFFLINE fallback (Workbox-safe)
+  // NOTE: /offline.html file public/ me honi chahiye
+  navigateFallback: "/offline.html",
+  navigateFallbackDenylist: [
+    /^\/api\//,           // API calls ko offline fallback mat do
+    /^\/_next\//,         // Next internal assets
+    /^\/.*\.(?:png|jpg|jpeg|gif|webp|svg|ico|css|js|json|txt)$/i,
   ],
 
-  // ✅ Offline install criteria ke liye fallback must
+  // ✅ Minimal runtime caching (no invalid fields)
   runtimeCaching: [
     {
       urlPattern: ({ request }) => request.mode === "navigate",
@@ -20,7 +26,6 @@ const withPWA = require("next-pwa")({
       options: {
         cacheName: "pages",
         networkTimeoutSeconds: 5,
-        fallbackURL: "/offline.html",
       },
     },
   ],
@@ -36,9 +41,7 @@ const nextConfig = {
   },
   async rewrites() {
     const base = process.env.NEXT_PUBLIC_API_URL;
-    return base
-      ? [{ source: "/api/:path*", destination: `${base}/api/:path*` }]
-      : [];
+    return base ? [{ source: "/api/:path*", destination: `${base}/api/:path*` }] : [];
   },
 };
 
