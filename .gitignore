@@ -1,0 +1,49 @@
+# =========================
+# Dependencies
+# =========================
+node_modules/
+
+# =========================
+# Next.js build output
+# =========================
+.next/
+out/
+dist/
+
+# =========================
+# Environment variables
+# =========================
+.env
+.env.*
+!.env.example
+
+# =========================
+# Logs
+# =========================
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+
+# =========================
+# OS files
+# =========================
+.DS_Store
+Thumbs.db
+
+# =========================
+# Editor folders
+# =========================
+.vscode/
+.idea/
+
+# =========================
+# Misc
+# =========================
+*.tsbuildinfo
+
+
+# Backend build output
+backend/build/
+storyverse-app/backend/build/
+
