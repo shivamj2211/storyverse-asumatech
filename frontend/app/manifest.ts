@@ -4,14 +4,33 @@ export default function manifest(): MetadataRoute.Manifest {
   return {
     name: "Storyverrse",
     short_name: "Storyverrse",
-    start_url: "/",
+
+    // ✅ VERY IMPORTANT: PWA install signal
+    start_url: "/?source=pwa",
     scope: "/",
+
+    // ✅ MUST be standalone (tab me nahi, app ki tarah)
     display: "standalone",
+
     background_color: "#0b1220",
     theme_color: "#16a34a",
+
+    // ✅ Chrome ko shortcut vs app ka difference samajhne me madad
+    prefer_related_applications: false,
+
     icons: [
-      { src: "/icon/icon-192.png", sizes: "192x192", type: "image/png" },
-      { src: "/icon/icon-512.png", sizes: "512x512", type: "image/png" }
+      {
+        src: "/icon/icon-192.png",
+        sizes: "192x192",
+        type: "image/png",
+        purpose: "any maskable"
+      },
+      {
+        src: "/icon/icon-512.png",
+        sizes: "512x512",
+        type: "image/png",
+        purpose: "any maskable"
+      }
     ]
   };
 }
