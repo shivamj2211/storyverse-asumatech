@@ -2572,4 +2572,24 @@ button {
 .novel-text p {
   margin: 0 0 10px 0;
 }
+.novel-measure {
+  position: absolute;
+  left: -9999px;
+  top: -9999px;
+  line-height: 1.75;
+
+  /* ✅ MUST wrap exactly like the real page, otherwise pagination breaks */
+  white-space: normal;
+  overflow-wrap: anywhere;
+  word-break: break-word;
+  box-sizing: border-box;
+
+  /* Match page padding so measured height == real height */
+  padding: 22px 20px;
+  visibility: hidden;
+}
+
+@media (min-width: 640px) {
+  .novel-measure { padding: 28px 28px; }
+}
 
